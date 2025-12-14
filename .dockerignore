@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (exclude large data files from image)
+data/*.csv
+data/*.pkl
+data/*.parquet
+
+# Tests (not needed in production image)
+tests/
+test.py
+
+# Documentation
+*.md
+README.md
+
+# CI/CD
+.github/
+
+# Logs
+*.log

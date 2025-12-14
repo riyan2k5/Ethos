@@ -1,0 +1,83 @@
+name: Data Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'data/**'
+      - 'scripts/validate_data.py'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'data/**'
+      - 'scripts/validate_data.py'
+  workflow_dispatch:
+    inputs:
+      data_path:
+        description: 'Path to data file'
+        required: false
+        default: 'data/spotify_data_reduced.csv'
+
+jobs:
+  validate-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Download or use sample data
+      run: |
+        # Check if data file exists, if not create a sample for validation
+        if [ ! -f "${{ github.event.inputs.data_path || 'data/spotify_data_reduced.csv' }}" ]; then
+          echo "Data file not found. Creating sample data for validation..."
+          python -c "
+          import pandas as pd
+          import numpy as np
+          np.random.seed(42)
+          df = pd.DataFrame({
+              'artist_name': ['Artist' + str(i) for i in range(100)],
+              'track_name': ['Track' + str(i) for i in range(100)],
+              'genre': np.random.choice(['Pop', 'Rock', 'Jazz'], 100),
+              'danceability': np.random.uniform(0, 1, 100),
+              'energy': np.random.uniform(0, 1, 100),
+              'acousticness': np.random.uniform(0, 1, 100),
+              'instrumentalness': np.random.uniform(0, 1, 100),
+              'loudness': np.random.uniform(-20, 0, 100),
+              'liveness': np.random.uniform(0, 1, 100),
+              'valence': np.random.uniform(0, 1, 100),
+              'tempo': np.random.uniform(60, 200, 100),
+              'key': np.random.randint(0, 12, 100),
+              'year': np.random.randint(2000, 2023, 100),
+              'duration_ms': np.random.randint(120000, 300000, 100)
+          })
+          df.to_csv('data/spotify_data_reduced.csv', index=False)
+          print('Sample data created')
+          "
+        fi
+    
+    - name: Run data validation
+      run: |
+        python scripts/validate_data.py \
+          --data-path "${{ github.event.inputs.data_path || 'data/spotify_data_reduced.csv' }}" \
+          --target-column "genre"
+    
+    - name: Upload validation report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: data-validation-report
+        path: |
+          data/
+        retention-days: 7

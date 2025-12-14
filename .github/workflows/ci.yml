@@ -1,0 +1,75 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Code quality checks
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - run: black --check .
+        continue-on-error: true
+      - run: flake8 . --max-line-length=127
+        continue-on-error: true
+
+  # Run all tests
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - run: pytest tests/ -v --cov=. --cov-report=xml
+
+  # Data validation
+  data-validation:
+    name: Data Validation
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, '[data]') || contains(github.event.head_commit.message, '[skip data]') == false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - run: |
+          if [ -f "data/spotify_data_reduced.csv" ]; then
+            python scripts/validate_data.py --data-path "data/spotify_data_reduced.csv"
+          else
+            echo "Data file not found, skipping validation"
+          fi
+
+  # Build container (dry run for PRs)
+  build-container:
+    name: Build Container
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build container (dry run)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: production
+          push: false
+          tags: ethos:test
