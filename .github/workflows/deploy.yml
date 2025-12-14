@@ -26,7 +26,7 @@ jobs:
     needs: []  # Can add dependencies like build-container job
     environment: ${{ github.event.inputs.environment && github.event.inputs.environment != '' && github.event.inputs.environment || 'staging' }}
     permissions:
-      contents: read
+      contents: write
       packages: read
     
     steps:
@@ -109,13 +109,18 @@ jobs:
             ? `✅ Deployment to ${environment} completed successfully`
             : `❌ Deployment to ${environment} failed`;
           
-          github.rest.repos.createDispatchEvent({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            event_type: 'deployment',
-            client_payload: {
-              status: status,
-              environment: environment,
-              message: message
-            }
-          });
+          console.log(message);
+          
+          // Create a deployment status (simpler than repository dispatch)
+          try {
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: context.runId,
+              state: status === 'success' ? 'success' : 'failure',
+              description: message
+            });
+          } catch (error) {
+            console.log('Note: Could not create deployment status:', error.message);
+            console.log('Deployment completed with status:', status);
+          }
