@@ -83,7 +83,7 @@ jobs:
     
     - name: Save model artifacts
       if: success()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: model-artifacts
         path: |
@@ -94,7 +94,7 @@ jobs:
     
     - name: Save training metrics
       if: success()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: training-metrics
         path: |
