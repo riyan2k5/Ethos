@@ -24,7 +24,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: []  # Can add dependencies like build-container job
-    environment: ${{ github.event.inputs.environment || 'staging' }}
+    environment: ${{ github.event.inputs.environment && github.event.inputs.environment != '' && github.event.inputs.environment || 'staging' }}
     permissions:
       contents: read
       packages: read
@@ -89,13 +89,22 @@ jobs:
         # - pytest tests/smoke_tests.py
         echo "✅ Smoke tests passed"
     
+    - name: Set environment variable
+      id: set-env
+      run: |
+        if [ -z "${{ github.event.inputs.environment }}" ]; then
+          echo "env=staging" >> $GITHUB_OUTPUT
+        else
+          echo "env=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+        fi
+    
     - name: Notify deployment status
       if: always()
       uses: actions/github-script@v6
       with:
         script: |
           const status = '${{ job.status }}';
-          const environment = '${{ github.event.inputs.environment || "staging" }}';
+          const environment = '${{ steps.set-env.outputs.env }}';
           const message = status === 'success' 
             ? `✅ Deployment to ${environment} completed successfully`
             : `❌ Deployment to ${environment} failed`;
