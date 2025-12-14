@@ -1,0 +1,25 @@
+# Ignore all contents of the data folder, but keep the folder itself
+data/*
+!data/.gitkeep
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
