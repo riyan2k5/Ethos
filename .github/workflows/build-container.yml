@@ -45,11 +45,11 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=sha,prefix={{target}}-
+          type=ref,event=branch,prefix=${{ matrix.target }}-
+          type=ref,event=pr,prefix=${{ matrix.target }}-
+          type=semver,pattern={{version}},prefix=${{ matrix.target }}-
+          type=semver,pattern={{major}}.{{minor}},prefix=${{ matrix.target }}-
+          type=sha,prefix=${{ matrix.target }}-
     
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
