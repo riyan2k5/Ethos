@@ -6,7 +6,7 @@ on:
     paths:
       - 'ml/**'
       - 'preprocessing/**'
-      - 'data/**'
+      - 'api/**'
   workflow_dispatch:
     inputs:
       train_on_production:
@@ -15,8 +15,8 @@ on:
         default: 'false'
         type: boolean
   schedule:
-    # Run training weekly on Monday at 2 AM UTC
-    - cron: '0 2 * * 1'
+    # Run training daily at 2 AM UTC
+    - cron: '0 2 * * *'
 
 jobs:
   train-model:
@@ -37,45 +37,31 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Download or prepare training data
+    - name: Set up database connection
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
-        # Check if data file exists
-        if [ ! -f "data/spotify_data_reduced.csv" ]; then
-          echo "⚠️  Training data not found. Creating sample data for testing..."
-          python -c "
-          import pandas as pd
-          import numpy as np
-          np.random.seed(42)
-          n_samples = 1000
-          df = pd.DataFrame({
-              'artist_name': ['Artist' + str(i) for i in range(n_samples)],
-              'track_name': ['Track' + str(i) for i in range(n_samples)],
-              'track_id': ['id_' + str(i) for i in range(n_samples)],
-              'genre': np.random.choice(['Pop', 'Rock', 'Jazz', 'Electronic', 'Hip-Hop'], n_samples),
-              'danceability': np.random.uniform(0, 1, n_samples),
-              'energy': np.random.uniform(0, 1, n_samples),
-              'acousticness': np.random.uniform(0, 1, n_samples),
-              'instrumentalness': np.random.uniform(0, 1, n_samples),
-              'loudness': np.random.uniform(-20, 0, n_samples),
-              'liveness': np.random.uniform(0, 1, n_samples),
-              'valence': np.random.uniform(0, 1, n_samples),
-              'tempo': np.random.uniform(60, 200, n_samples),
-              'key': np.random.randint(0, 12, n_samples),
-              'year': np.random.randint(2000, 2023, n_samples),
-              'duration_ms': np.random.randint(120000, 300000, n_samples)
-          })
-          df.to_csv('data/spotify_data_reduced.csv', index=False)
-          print(f'Sample training data created with {n_samples} samples')
-          "
+        if [ -z "$DATABASE_URL" ]; then
+          echo "❌ ERROR: DATABASE_URL secret is not set in GitHub repository secrets"
+          echo "Please add DATABASE_URL to your repository secrets:"
+          echo "1. Go to Settings > Secrets and variables > Actions"
+          echo "2. Click 'New repository secret'"
+          echo "3. Name: DATABASE_URL"
+          echo "4. Value: your_postgresql_connection_string"
+          exit 1
+        else
+          echo "✅ DATABASE_URL is set (hidden for security)"
         fi
     
-    - name: Run data validation before training
+    - name: Test database connection
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
-        python scripts/validate_data.py \
-          --data-path "data/spotify_data_reduced.csv" \
-          --target-column "genre"
+        python api/test_db_connection.py
     
     - name: Train model
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
         cd ml
         python train_genre_model.py

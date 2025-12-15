@@ -20,6 +20,7 @@ typing-extensions>=4.8.0
 # ML Model Validation
 great-expectations>=0.18.0
 
-# Container and Deployment
-gunicorn>=21.2.0
-flask>=2.3.0
+# Database
+psycopg2-binary>=2.9.0
+python-dotenv>=1.0.0
+sqlalchemy>=2.0.0
