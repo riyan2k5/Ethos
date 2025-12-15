@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import time
 import os
+import pickle
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -17,8 +18,12 @@ from sqlalchemy import create_engine
 
 # --- Configuration ---
 SCRIPT_DIR = Path(__file__).parent.resolve()
+MODELS_DIR = SCRIPT_DIR.parent / "models"
+MODELS_DIR.mkdir(exist_ok=True)
 TABLE_NAME = "spotify_songs"  # Database table name
 TARGET_COLUMN = "genre"
+MODEL_FILE = MODELS_DIR / "genre_classification_model.pkl"
+FEATURES_FILE = MODELS_DIR / "genre_classification_features.pkl"
 
 # Check if DATABASE_URL is set (required for Neon)
 if not os.getenv("DATABASE_URL") and not os.getenv("DB_CONNECTION_STRING"):
@@ -274,7 +279,19 @@ def train_and_evaluate_model(table_name: str, target_col: str):
         print("Generating predictions on test set...")
         y_pred = clf.predict(X_test)
 
-        # 7. Evaluation
+        # 7. Save model components
+        print(f"\nSaving model to '{MODEL_FILE}'...")
+        
+        with open(MODEL_FILE, 'wb') as f:
+            pickle.dump(clf, f)
+        
+        with open(FEATURES_FILE, 'wb') as f:
+            pickle.dump(feature_cols, f)
+        
+        print(f"   ✅ Model saved successfully")
+        print(f"   ✅ Features saved to '{FEATURES_FILE}'")
+
+        # 8. Evaluation
         overall_acc = accuracy_score(y_test, y_pred)
 
         print("\n" + "=" * 60)
@@ -288,6 +305,8 @@ def train_and_evaluate_model(table_name: str, target_col: str):
         print(classification_report(y_test, y_pred))
 
         print("=" * 60)
+        print(f"\nModel saved to: {MODEL_FILE}")
+        print(f"To use this model, load it and call predict_genre(features)")
 
     except ConnectionError as e:
         print(f"\n❌ Database Connection Error: {e}")

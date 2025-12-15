@@ -30,3 +30,9 @@ Thumbs.db
 .env.*.local
 *.env
 !env.template
+
+# Model files (large binary files)
+models/*.pkl
+models/*.h5
+models/*.joblib
+!models/.gitkeep

@@ -28,8 +28,11 @@ format-check: ## Check code formatting
 validate: ## Validate data
 	python scripts/validate_data.py --data-path data/spotify_data_reduced.csv --target-column genre
 
-train: ## Train the model
+train: ## Train the genre classification model
 	cd ml && python train_genre_model.py
+
+train-all: ## Train all ML models
+	python scripts/train_all_models.py
 
 clean: ## Clean cache and temporary files
 	find . -type d -name __pycache__ -exec rm -r {} + 2>/dev/null || true
