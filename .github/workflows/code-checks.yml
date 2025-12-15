@@ -38,7 +38,7 @@ jobs:
     
     - name: Lint with Pylint
       run: |
-        pylint --disable=all --enable=E,F --fail-under=5 ml/ preprocessing/ scripts/ || true
+        pylint --disable=all --enable=E,F --fail-under=5 src/ml/ src/preprocessing/ src/scripts/ || true
       continue-on-error: true
     
     - name: Type check with mypy

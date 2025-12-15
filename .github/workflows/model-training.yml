@@ -4,9 +4,9 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'ml/**'
-      - 'preprocessing/**'
-      - 'api/**'
+      - 'src/ml/**'
+      - 'src/preprocessing/**'
+      - 'src/api/**'
   workflow_dispatch:
     inputs:
       train_on_production:
@@ -57,13 +57,13 @@ jobs:
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
-        python api/test_db_connection.py
+        python src/api/test_db_connection.py
     
     - name: Train model
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
-        cd ml
+        cd src/ml
         python train_genre_model.py
       continue-on-error: false
     
@@ -73,8 +73,8 @@ jobs:
       with:
         name: model-artifacts
         path: |
-          ml/models/
-          ml/*.pkl
+          models/
+          models/*.pkl
         retention-days: 30
         if-no-files-found: warn
     
@@ -84,8 +84,8 @@ jobs:
       with:
         name: training-metrics
         path: |
-          ml/metrics/
-          ml/*.json
+          models/metrics/
+          models/metrics/*.json
         retention-days: 30
         if-no-files-found: warn
     

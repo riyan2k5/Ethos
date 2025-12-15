@@ -37,7 +37,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
       - run: pip install -r requirements.txt
-      - run: pytest tests/ -v --cov=. --cov-report=xml
+      - run: pytest src/tests/ -v --cov=src --cov-report=xml
 
   # Data validation
   data-validation:
@@ -53,7 +53,7 @@ jobs:
       - run: pip install -r requirements.txt
       - run: |
           if [ -f "data/spotify_data_reduced.csv" ]; then
-            python scripts/validate_data.py --data-path "data/spotify_data_reduced.csv"
+            python src/scripts/validate_data.py --data-path "data/spotify_data_reduced.csv"
           else
             echo "Data file not found, skipping validation"
           fi

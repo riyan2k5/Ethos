@@ -46,12 +46,12 @@ jobs:
     
     - name: Run pre-deployment tests
       run: |
-        pytest tests/ -v
+        pytest src/tests/ -v
     
     - name: Run data validation
       run: |
         if [ -f "data/spotify_data_reduced.csv" ]; then
-          python scripts/validate_data.py \
+          python src/scripts/validate_data.py \
             --data-path "data/spotify_data_reduced.csv" \
             --target-column "genre"
         else

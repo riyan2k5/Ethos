@@ -5,12 +5,12 @@ on:
     branches: [ main, develop ]
     paths:
       - 'data/**'
-      - 'scripts/validate_data.py'
+      - 'src/scripts/validate_data.py'
   pull_request:
     branches: [ main, develop ]
     paths:
       - 'data/**'
-      - 'scripts/validate_data.py'
+      - 'src/scripts/validate_data.py'
   workflow_dispatch:
     inputs:
       data_path:
@@ -69,7 +69,7 @@ jobs:
     
     - name: Run data validation
       run: |
-        python scripts/validate_data.py \
+        python src/scripts/validate_data.py \
           --data-path "${{ github.event.inputs.data_path || 'data/spotify_data_reduced.csv' }}" \
           --target-column "genre"
     
