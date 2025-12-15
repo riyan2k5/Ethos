@@ -1,6 +1,7 @@
 """
 FastAPI web application for Spotify song recommendations with ML predictions.
 """
+
 from fastapi import FastAPI, Request, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -36,7 +37,9 @@ templates = Jinja2Templates(directory=str(templates_dir))
 
 print(f"Static directory: {static_dir}")
 print(f"Templates directory: {templates_dir}")
-print(f"Static files exist: {(static_dir / 'styles.css').exists()}, {(static_dir / 'script.js').exists()}")
+print(
+    f"Static files exist: {(static_dir / 'styles.css').exists()}, {(static_dir / 'script.js').exists()}"
+)
 
 # Initialize services
 data_loader = DataLoader()
@@ -52,12 +55,15 @@ async def startup_event():
     try:
         print("Loading dataset...")
         data_loader.load_dataset()
-        print(f"✅ Dataset loaded: {len(data_loader.df) if data_loader.df is not None else 0} songs")
+        print(
+            f"✅ Dataset loaded: {len(data_loader.df) if data_loader.df is not None else 0} songs"
+        )
     except Exception as e:
         print(f"⚠️  Error loading dataset: {e}")
         import traceback
+
         traceback.print_exc()
-    
+
     try:
         print("Loading ML models...")
         ml_service.load_models()
@@ -65,8 +71,9 @@ async def startup_event():
     except Exception as e:
         print(f"⚠️  Error loading ML models: {e}")
         import traceback
+
         traceback.print_exc()
-    
+
     try:
         print("Initializing Spotify service...")
         await spotify_service.initialize()
@@ -74,8 +81,9 @@ async def startup_event():
     except Exception as e:
         print(f"⚠️  Error initializing Spotify service: {e}")
         import traceback
+
         traceback.print_exc()
-    
+
     print("✅ All services initialized!")
 
 
@@ -85,33 +93,29 @@ async def home(request: Request):
     try:
         # Get user ID from cookies
         user_id = request.cookies.get("user_id", "anonymous")
-        
+
         # Get recommendations (reduced for faster loading)
         recommended = recommendation_service.get_recommendations(user_id, limit=15)
-        
+
         # Get clustered songs (reduced for faster loading)
         clusters = recommendation_service.get_clustered_songs(limit=10)
-        
+
         return templates.TemplateResponse(
             "index.html",
             {
                 "request": request,
                 "recommended": recommended or [],
-                "clusters": clusters or {}
-            }
+                "clusters": clusters or {},
+            },
         )
     except Exception as e:
         print(f"Error in home route: {e}")
         import traceback
+
         traceback.print_exc()
         # Return template even if there's an error
         return templates.TemplateResponse(
-            "index.html",
-            {
-                "request": request,
-                "recommended": [],
-                "clusters": {}
-            }
+            "index.html", {"request": request, "recommended": [], "clusters": {}}
         )
 
 
@@ -120,7 +124,7 @@ async def search(query: str, limit: int = 20):
     """Search for songs in the dataset."""
     if not query or len(query) < 2:
         return []
-    
+
     results = data_loader.search_songs(query, limit)
     return results
 
@@ -129,35 +133,42 @@ async def search(query: str, limit: int = 20):
 async def get_song(track_id: str):
     """Get song details with AI predictions."""
     import asyncio
-    
+
     try:
         song = data_loader.get_song_by_id(track_id)
         if not song:
             raise HTTPException(status_code=404, detail="Song not found")
-        
+
         # Get AI predictions (fast, synchronous)
         predictions = {}
         try:
             predictions = ml_service.predict_all(song)
         except Exception as e:
             print(f"Error getting predictions for {track_id}: {e}")
-            predictions = {"genre": {"predicted": "Unknown", "probabilities": {}, "top_predictions": []}}
-        
+            predictions = {
+                "genre": {
+                    "predicted": "Unknown",
+                    "probabilities": {},
+                    "top_predictions": [],
+                }
+            }
+
         # Get similar songs (fast, synchronous)
         similar = []
         try:
-            similar = recommendation_service.get_similar_songs(track_id, limit=5)  # Reduced from 10
+            similar = recommendation_service.get_similar_songs(
+                track_id, limit=5
+            )  # Reduced from 10
         except Exception as e:
             print(f"Error getting similar songs for {track_id}: {e}")
             similar = []
-        
+
         # Get cover art from Spotify (async, but with shorter timeout)
         cover_art = None
         try:
             # Set a shorter timeout for Spotify API call (1.5 seconds)
             cover_art = await asyncio.wait_for(
-                spotify_service.get_cover_art(track_id),
-                timeout=1.5
+                spotify_service.get_cover_art(track_id), timeout=1.5
             )
         except asyncio.TimeoutError:
             # Silently fail - placeholder will be used
@@ -165,23 +176,26 @@ async def get_song(track_id: str):
         except Exception as e:
             # Silently fail - placeholder will be used
             cover_art = None
-        
+
         # Don't load cover art for similar songs here - let frontend load lazily
         # This makes the API response much faster
-        
+
         return {
             "song": song,
             "predictions": predictions,
             "similar": similar,
-            "cover_art": cover_art
+            "cover_art": cover_art,
         }
     except HTTPException:
         raise
     except Exception as e:
         print(f"Error in get_song endpoint for {track_id}: {e}")
         import traceback
+
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error loading song details: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error loading song details: {str(e)}"
+        )
 
 
 @app.post("/api/interact")
@@ -191,12 +205,12 @@ async def track_interaction(request: Request):
     user_id = request.cookies.get("user_id", "anonymous")
     track_id = data.get("track_id")
     action = data.get("action", "click")
-    
+
     if not track_id:
         raise HTTPException(status_code=400, detail="track_id required")
-    
+
     recommendation_service.track_interaction(user_id, track_id, action)
-    
+
     return {"status": "success"}
 
 
@@ -211,6 +225,7 @@ async def get_recommendations(request: Request, limit: int = 20):
     except Exception as e:
         print(f"Error getting recommendations: {e}")
         import traceback
+
         traceback.print_exc()
         return []
 
@@ -225,6 +240,7 @@ async def get_clusters(limit: int = 15):
     except Exception as e:
         print(f"Error getting clusters: {e}")
         import traceback
+
         traceback.print_exc()
         return {}
 
@@ -236,7 +252,7 @@ async def health_check():
         "status": "ok",
         "dataset_loaded": data_loader.df is not None,
         "dataset_size": len(data_loader.df) if data_loader.df is not None else 0,
-        "models_loaded": ml_service.genre_model is not None
+        "models_loaded": ml_service.genre_model is not None,
     }
 
 
@@ -259,6 +275,7 @@ async def get_model_analytics():
     except Exception as e:
         print(f"Error getting analytics: {e}")
         import traceback
+
         traceback.print_exc()
         return {"models": [], "dataset_info": {}}
 
@@ -268,23 +285,25 @@ async def upload_dataset(file: UploadFile = File(...)):
     """Upload a custom dataset file."""
     try:
         # Validate file type
-        if not file.filename.endswith('.csv'):
+        if not file.filename.endswith(".csv"):
             raise HTTPException(status_code=400, detail="Please upload a CSV file")
-        
+
         # Read file content
         contents = await file.read()
-        
+
         if len(contents) == 0:
             raise HTTPException(status_code=400, detail="File is empty")
-        
+
         # Load the dataset
         result = data_loader.load_custom_dataset(contents, file.filename)
-        
+
         if result.get("success"):
             # Update the global recommendation service
             global recommendation_service
-            recommendation_service = RecommendationService(data_loader, ml_service, spotify_service)
-            
+            recommendation_service = RecommendationService(
+                data_loader, ml_service, spotify_service
+            )
+
             return JSONResponse(content=result)
         else:
             error_msg = result.get("message", "Unknown error loading dataset")
@@ -294,9 +313,12 @@ async def upload_dataset(file: UploadFile = File(...)):
     except Exception as e:
         print(f"Error uploading dataset: {e}")
         import traceback
+
         traceback.print_exc()
         error_msg = str(e) if str(e) else "Unknown error occurred"
-        raise HTTPException(status_code=500, detail=f"Error uploading dataset: {error_msg}")
+        raise HTTPException(
+            status_code=500, detail=f"Error uploading dataset: {error_msg}"
+        )
 
 
 @app.post("/api/reset-dataset")
@@ -307,7 +329,9 @@ async def reset_dataset():
         return {"success": True, "message": "Reset to default dataset"}
     except Exception as e:
         print(f"Error resetting dataset: {e}")
-        raise HTTPException(status_code=500, detail=f"Error resetting dataset: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error resetting dataset: {str(e)}"
+        )
 
 
 @app.get("/api/dataset-info")
@@ -317,11 +341,11 @@ async def get_dataset_info():
         df = data_loader.df
         if df is None or df.empty:
             return {"count": 0, "is_custom": data_loader.use_custom}
-        
+
         return {
             "count": len(df),
             "is_custom": data_loader.use_custom,
-            "columns": list(df.columns) if hasattr(df, 'columns') else []
+            "columns": list(df.columns) if hasattr(df, "columns") else [],
         }
     except Exception as e:
         print(f"Error getting dataset info: {e}")
@@ -330,5 +354,5 @@ async def get_dataset_info():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
 
+    uvicorn.run(app, host="0.0.0.0", port=8000)

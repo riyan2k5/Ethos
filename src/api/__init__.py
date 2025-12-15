@@ -2,6 +2,7 @@
 API package for database connections and utilities.
 All credentials are read from environment variables - NEVER hardcoded.
 """
+
 from src.api.db_config import DatabaseConfig
 from src.api.db_connection import (
     get_db_connection,
@@ -9,7 +10,7 @@ from src.api.db_connection import (
     execute_query,
     execute_query_dict,
     initialize_connection_pool,
-    close_connection_pool
+    close_connection_pool,
 )
 
 __all__ = [
@@ -21,4 +22,3 @@ __all__ = [
     "initialize_connection_pool",
     "close_connection_pool",
 ]
-

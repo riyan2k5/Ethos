@@ -3,6 +3,7 @@ Test script to verify database connection.
 Run this to test your PostgreSQL connection.
 All credentials are read from environment variables.
 """
+
 import os
 import sys
 from pathlib import Path
@@ -19,7 +20,7 @@ def main():
     print("=" * 60)
     print("Testing PostgreSQL Database Connection")
     print("=" * 60)
-    
+
     # Display configuration (without password)
     config = DatabaseConfig()
     print(f"\nDatabase Configuration:")
@@ -28,12 +29,12 @@ def main():
     print(f"  Database: {config.database}")
     print(f"  User: {config.user}")
     print()
-    
+
     # Test connection
     print("Attempting to connect...")
     if test_connection():
         print("\n✅ Connection successful!")
-        
+
         # Try to list tables
         try:
             query = """
@@ -43,7 +44,7 @@ def main():
                 ORDER BY table_name;
             """
             tables = execute_query_dict(query)
-            
+
             if tables:
                 print(f"\n📊 Found {len(tables)} table(s) in database:")
                 for table in tables:
@@ -68,10 +69,9 @@ def main():
         print("\nOr set DATABASE_URL:")
         print("  export DATABASE_URL='postgresql://user:password@host:port/database'")
         print("\nOr create a .env file with these variables.")
-    
+
     print("\n" + "=" * 60)
 
 
 if __name__ == "__main__":
     main()
-

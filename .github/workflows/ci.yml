@@ -37,7 +37,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
       - run: pip install -r requirements.txt
-      - run: pytest src/tests/ -v --cov=src --cov-report=xml
+      - name: Run unit and ML tests (excluding DeepChecks)
+        run: |
+          pytest src/tests/ -v --cov=src --cov-report=xml --ignore=src/tests/test_ml_deepchecks.py
       - name: Run DeepChecks ML tests (if database available)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

@@ -2,6 +2,7 @@
 Model for predicting energy level of songs using regression.
 Uses Random Forest Regressor to predict energy based on audio features.
 """
+
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
@@ -35,7 +36,9 @@ if not os.getenv("DATABASE_URL") and not os.getenv("DB_CONNECTION_STRING"):
     print("⚠️  WARNING: DATABASE_URL not set!")
     print("=" * 60)
     print("Please set your database connection string:")
-    print("  export DATABASE_URL='postgresql://user:password@host:port/database?sslmode=require'")
+    print(
+        "  export DATABASE_URL='postgresql://user:password@host:port/database?sslmode=require'"
+    )
     print("=" * 60)
     print()
 
@@ -61,20 +64,22 @@ def create_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
         df["Valence_Energy_Ratio"] = df["valence"] / (df["energy"] + 1e-6)
 
     if "acousticness" in df.columns and "instrumentalness" in df.columns:
-        df["Acoustic_Instrumental_Interaction"] = df["acousticness"] * df["instrumentalness"]
+        df["Acoustic_Instrumental_Interaction"] = (
+            df["acousticness"] * df["instrumentalness"]
+        )
 
     if "speechiness" in df.columns and "energy" in df.columns:
         df["Speechiness_Energy_Ratio"] = df["speechiness"] / (df["energy"] + 1e-6)
 
     df = df.replace([np.inf, -np.inf], np.nan)
-    
+
     engineered_cols = [
         "Dance_Energy_Interaction",
         "Valence_Energy_Ratio",
         "Acoustic_Instrumental_Interaction",
         "Speechiness_Energy_Ratio",
     ]
-    
+
     for col in engineered_cols:
         if col in df.columns and df[col].isna().any():
             df[col].fillna(df[col].median(), inplace=True)
@@ -93,7 +98,7 @@ def get_feature_columns(df: pd.DataFrame) -> list:
     # Add engineered features (but remove ones that depend on energy)
     engineered_cols = [
         "Acoustic_Instrumental_Interaction",
-        # Note: Excluding Dance_Energy_Interaction, Valence_Energy_Ratio, 
+        # Note: Excluding Dance_Energy_Interaction, Valence_Energy_Ratio,
         # and Speechiness_Energy_Ratio as they depend on energy (target variable)
     ]
     for col in engineered_cols:
@@ -106,23 +111,25 @@ def get_feature_columns(df: pd.DataFrame) -> list:
 def load_data_from_database(table_name: str) -> pd.DataFrame:
     """Load data from PostgreSQL database."""
     print(f"Loading data from database table '{table_name}'...")
-    
+
     if not test_connection():
-        raise ConnectionError("Database connection failed. Please check your configuration.")
-    
+        raise ConnectionError(
+            "Database connection failed. Please check your configuration."
+        )
+
     try:
         config = DatabaseConfig()
         conn_string = config.get_connection_string()
-        
+
         engine = create_engine(
             conn_string,
             pool_pre_ping=True,
             pool_recycle=300,
             pool_size=1,
             max_overflow=0,
-            connect_args={"connect_timeout": 10}
+            connect_args={"connect_timeout": 10},
         )
-        
+
         query = f"""
         SELECT 
             id, artist_name, track_name, track_id, genre, popularity,
@@ -130,14 +137,14 @@ def load_data_from_database(table_name: str) -> pd.DataFrame:
             instrumentalness, valence
         FROM {table_name};
         """
-        
+
         print("   Fetching data...")
         df = pd.read_sql(query, con=engine)
         engine.dispose()
-        
+
         print(f"   ✅ Data loaded successfully. Shape: {df.shape}")
         return df
-        
+
     except Exception as e:
         print(f"   ⚠️  SQLAlchemy method failed: {e}")
         raise ConnectionError(f"Failed to load data from database: {e}")
@@ -149,7 +156,7 @@ def train_energy_regression_model(table_name: str, target_col: str):
     Saves the model and feature columns for future use.
     """
     print(f"--- Starting Energy Regression Model Training Pipeline ---")
-    
+
     config = DatabaseConfig()
     print(f"Database Configuration:")
     print(f"  Host: {config.host}")
@@ -166,7 +173,7 @@ def train_energy_regression_model(table_name: str, target_col: str):
     try:
         # 1. Load the Data from Database
         df = load_data_from_database(table_name)
-        
+
         print(f"\nData Summary:")
         print(f"  Total rows: {len(df)}")
         print(f"  Total columns: {len(df.columns)}")
@@ -184,7 +191,7 @@ def train_energy_regression_model(table_name: str, target_col: str):
         feature_cols = get_feature_columns(df)
         X = df[feature_cols].copy()
         y = df[target_col].copy()
-        
+
         print(f"\nFeatures used for regression ({len(feature_cols)}):")
         print(feature_cols)
 
@@ -202,15 +209,12 @@ def train_energy_regression_model(table_name: str, target_col: str):
         # 6. Train Random Forest Regressor
         print("Training Random Forest Regressor...")
         start_time = time.time()
-        
+
         regressor = RandomForestRegressor(
-            n_estimators=100,
-            random_state=42,
-            n_jobs=-1,
-            max_depth=10
+            n_estimators=100, random_state=42, n_jobs=-1, max_depth=10
         )
         regressor.fit(X_train, y_train)
-        
+
         end_time = time.time()
         print(f"   ✅ Model trained in {end_time - start_time:.2f} seconds")
 
@@ -226,13 +230,13 @@ def train_energy_regression_model(table_name: str, target_col: str):
 
         # 9. Save model components
         print(f"\nSaving model to '{MODEL_FILE}'...")
-        
-        with open(MODEL_FILE, 'wb') as f:
+
+        with open(MODEL_FILE, "wb") as f:
             pickle.dump(regressor, f)
-        
-        with open(FEATURES_FILE, 'wb') as f:
+
+        with open(FEATURES_FILE, "wb") as f:
             pickle.dump(feature_cols, f)
-        
+
         print(f"   ✅ Model saved successfully")
         print(f"   ✅ Features saved to '{FEATURES_FILE}'")
 
@@ -245,41 +249,45 @@ def train_energy_regression_model(table_name: str, target_col: str):
         print(f"  Mean Squared Error (MSE): {mse:.6f}")
         print(f"  Root Mean Squared Error (RMSE): {rmse:.4f}")
         print(f"  Mean Absolute Error (MAE): {mae:.4f}")
-        
+
         # Save metrics
         try:
             import json
             from pathlib import Path
+
             metrics_dir = Path(__file__).parent.parent.parent / "models" / "metrics"
             metrics_dir.mkdir(exist_ok=True)
             metrics = {
                 "r2_score": float(r2),
                 "mse": float(mse),
                 "rmse": float(rmse),
-                "mae": float(mae)
+                "mae": float(mae),
             }
-            with open(metrics_dir / "energy_regression_metrics.json", 'w') as f:
+            with open(metrics_dir / "energy_regression_metrics.json", "w") as f:
                 json.dump(metrics, f, indent=2)
-            print(f"\n✅ Metrics saved to {metrics_dir / 'energy_regression_metrics.json'}")
+            print(
+                f"\n✅ Metrics saved to {metrics_dir / 'energy_regression_metrics.json'}"
+            )
         except Exception as e:
             print(f"\n⚠️  Could not save metrics: {e}")
-        
+
         # Feature importance
         print(f"\nTop 10 Most Important Features:")
-        feature_importance = pd.DataFrame({
-            'feature': feature_cols,
-            'importance': regressor.feature_importances_
-        }).sort_values('importance', ascending=False)
-        
+        feature_importance = pd.DataFrame(
+            {"feature": feature_cols, "importance": regressor.feature_importances_}
+        ).sort_values("importance", ascending=False)
+
         for idx, row in feature_importance.head(10).iterrows():
             print(f"  {row['feature']}: {row['importance']:.4f}")
-        
+
         # Sample predictions
         print(f"\nSample Predictions (first 10 test samples):")
         sample_indices = min(10, len(y_test))
         for i in range(sample_indices):
-            print(f"  Actual: {y_test.iloc[i]:.3f}, Predicted: {y_pred[i]:.3f}, "
-                  f"Error: {abs(y_test.iloc[i] - y_pred[i]):.3f}")
+            print(
+                f"  Actual: {y_test.iloc[i]:.3f}, Predicted: {y_pred[i]:.3f}, "
+                f"Error: {abs(y_test.iloc[i] - y_pred[i]):.3f}"
+            )
 
         print("\n" + "=" * 60)
         print("✅ Energy Regression Model Training Completed Successfully!")
@@ -292,9 +300,9 @@ def train_energy_regression_model(table_name: str, target_col: str):
     except Exception as e:
         print(f"\n❌ An unexpected error occurred: {e}")
         import traceback
+
         traceback.print_exc()
 
 
 if __name__ == "__main__":
     train_energy_regression_model(TABLE_NAME, TARGET_COLUMN)
-

@@ -2,6 +2,7 @@
 Simple script to run the Prefect ML pipeline.
 This can be used to execute the pipeline locally or deploy it to Prefect Cloud/Server.
 """
+
 import sys
 import os
 from pathlib import Path
@@ -12,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
+
     env_path = Path(__file__).parent.parent / ".env"
     if env_path.exists():
         load_dotenv(env_path)
@@ -29,23 +31,25 @@ from workflows.ml_pipeline import ml_training_pipeline
 def main():
     """Main entry point for running the pipeline."""
     import argparse
-    
-    parser = argparse.ArgumentParser(description="Run ML Training Pipeline with Prefect")
+
+    parser = argparse.ArgumentParser(
+        description="Run ML Training Pipeline with Prefect"
+    )
     parser.add_argument(
         "--table-name",
         type=str,
         default="spotify_songs",
-        help="Name of the database table (default: spotify_songs)"
+        help="Name of the database table (default: spotify_songs)",
     )
     parser.add_argument(
         "--n-clusters",
         type=int,
         default=2,
-        help="Number of clusters for clustering model (default: 2)"
+        help="Number of clusters for clustering model (default: 2)",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Run the pipeline
     print("=" * 80)
     print("Starting ML Training Pipeline")
@@ -55,33 +59,32 @@ def main():
     print("Note: Data is expected to be already cleaned and in the database")
     print("=" * 80)
     print()
-    
+
     try:
         result = ml_training_pipeline(
-            table_name=args.table_name,
-            n_clusters=args.n_clusters
+            table_name=args.table_name, n_clusters=args.n_clusters
         )
-        
+
         print("\n" + "=" * 80)
         print("Pipeline completed successfully!")
         print("=" * 80)
-        
+
         # Print summary
         if result.get("model_training"):
             print("\nModel Training Results:")
             for model_name, model_result in result["model_training"].items():
                 status = model_result.get("status", "unknown")
                 print(f"  {model_name}: {status}")
-        
+
         return 0
-        
+
     except Exception as e:
         print(f"\n❌ Pipeline failed: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -31,10 +31,14 @@ if not os.getenv("DATABASE_URL") and not os.getenv("DB_CONNECTION_STRING"):
     print("⚠️  WARNING: DATABASE_URL not set!")
     print("=" * 60)
     print("Please set your database connection string:")
-    print("  export DATABASE_URL='postgresql://user:password@host:port/database?sslmode=require'")
+    print(
+        "  export DATABASE_URL='postgresql://user:password@host:port/database?sslmode=require'"
+    )
     print()
     print("Example format:")
-    print("  export DATABASE_URL='postgresql://username:password@hostname:5432/database_name?sslmode=require'")
+    print(
+        "  export DATABASE_URL='postgresql://username:password@hostname:5432/database_name?sslmode=require'"
+    )
     print("=" * 60)
     print()
 
@@ -72,7 +76,9 @@ def create_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
     # 3. Acousticness-Instrumentalness Interaction
     # May help distinguish acoustic instrumental tracks from electronic tracks.
     if "acousticness" in df.columns and "instrumentalness" in df.columns:
-        df["Acoustic_Instrumental_Interaction"] = df["acousticness"] * df["instrumentalness"]
+        df["Acoustic_Instrumental_Interaction"] = (
+            df["acousticness"] * df["instrumentalness"]
+        )
 
     # 4. Speechiness-Energy Ratio
     # Tracks with high speechiness (spoken word) relative to energy.
@@ -128,36 +134,38 @@ def load_data_from_database(table_name: str) -> pd.DataFrame:
     """
     Load data from PostgreSQL database using SQLAlchemy.
     All credentials are read from environment variables - NEVER hardcoded.
-    
+
     Args:
         table_name: Name of the table to load from
-    
+
     Returns:
         pd.DataFrame: DataFrame containing the data
     """
     print(f"Loading data from database table '{table_name}'...")
-    
+
     # Test connection first
     if not test_connection():
-        raise ConnectionError("Database connection failed. Please check your configuration.")
-    
+        raise ConnectionError(
+            "Database connection failed. Please check your configuration."
+        )
+
     # Use SQLAlchemy with proper configuration for Neon
     print("   Executing query...")
     try:
         config = DatabaseConfig()
         conn_string = config.get_connection_string()
-        
+
         # Create engine with pool_pre_ping and pool_recycle for Neon compatibility
         # Disable connection pooling to avoid hanging issues
         engine = create_engine(
             conn_string,
             pool_pre_ping=True,  # Verify connections before using
-            pool_recycle=300,    # Recycle connections after 5 minutes
-            pool_size=1,         # Minimal pool size
-            max_overflow=0,      # No overflow connections
-            connect_args={"connect_timeout": 10}  # 10 second timeout
+            pool_recycle=300,  # Recycle connections after 5 minutes
+            pool_size=1,  # Minimal pool size
+            max_overflow=0,  # No overflow connections
+            connect_args={"connect_timeout": 10},  # 10 second timeout
         )
-        
+
         # Query to get all data (excluding id and created_at columns)
         query = f"""
         SELECT 
@@ -166,26 +174,27 @@ def load_data_from_database(table_name: str) -> pd.DataFrame:
             instrumentalness, valence
         FROM {table_name};
         """
-        
+
         print("   Fetching data...")
         # Use pandas read_sql with SQLAlchemy engine (no warning)
         df = pd.read_sql(query, con=engine)
         engine.dispose()  # Close all connections
-        
+
         print(f"   ✅ Data loaded successfully. Shape: {df.shape}")
         return df
-        
+
     except Exception as e:
         print(f"   ⚠️  SQLAlchemy method failed: {e}")
         print("   Trying fallback method...")
         # Fallback: use direct psycopg2 connection
         try:
             import psycopg2
+
             config = DatabaseConfig()
             conn_string = config.get_connection_string()
-            
+
             conn = psycopg2.connect(conn_string)
-            
+
             query = f"""
             SELECT 
                 artist_name, track_name, track_id, genre, popularity,
@@ -193,12 +202,12 @@ def load_data_from_database(table_name: str) -> pd.DataFrame:
                 instrumentalness, valence
             FROM {table_name};
             """
-            
+
             print("   Fetching data...")
             # Use pandas read_sql_query to avoid warning
             df = pd.read_sql_query(query, con=conn)
             conn.close()
-            
+
             print(f"   ✅ Data loaded successfully. Shape: {df.shape}")
             return df
         except Exception as e2:
@@ -207,16 +216,16 @@ def load_data_from_database(table_name: str) -> pd.DataFrame:
 
 def train_and_evaluate_model(table_name: str, target_col: str):
     """
-    Loads the dataset from database, creates engineered features, trains a Random Forest 
+    Loads the dataset from database, creates engineered features, trains a Random Forest
     Classifier, and prints detailed performance metrics by genre.
     All credentials are read from environment variables - NEVER hardcoded.
-    
+
     Args:
         table_name: Name of the database table to load data from
         target_col: Name of the target column (genre)
     """
     print(f"--- Starting Model Training Pipeline ---")
-    
+
     # Show database configuration
     config = DatabaseConfig()
     print(f"Database Configuration:")
@@ -233,7 +242,7 @@ def train_and_evaluate_model(table_name: str, target_col: str):
     try:
         # 1. Load the Data from Database
         df = load_data_from_database(table_name)
-        
+
         # Show data summary
         print(f"\nData Summary:")
         print(f"  Total rows: {len(df)}")
@@ -281,24 +290,25 @@ def train_and_evaluate_model(table_name: str, target_col: str):
 
         # 7. Save model components
         print(f"\nSaving model to '{MODEL_FILE}'...")
-        
-        with open(MODEL_FILE, 'wb') as f:
+
+        with open(MODEL_FILE, "wb") as f:
             pickle.dump(clf, f)
-        
-        with open(FEATURES_FILE, 'wb') as f:
+
+        with open(FEATURES_FILE, "wb") as f:
             pickle.dump(feature_cols, f)
-        
+
         print(f"   ✅ Model saved successfully")
         print(f"   ✅ Features saved to '{FEATURES_FILE}'")
 
         # 8. Evaluation
         overall_acc = accuracy_score(y_test, y_pred)
-        
+
         # Calculate additional metrics
         from sklearn.metrics import precision_score, recall_score, f1_score
-        precision = precision_score(y_test, y_pred, average='weighted')
-        recall = recall_score(y_test, y_pred, average='weighted')
-        f1 = f1_score(y_test, y_pred, average='weighted')
+
+        precision = precision_score(y_test, y_pred, average="weighted")
+        recall = recall_score(y_test, y_pred, average="weighted")
+        f1 = f1_score(y_test, y_pred, average="weighted")
 
         print("\n" + "=" * 60)
         print(f"✅ MODEL RESULTS")
@@ -309,22 +319,25 @@ def train_and_evaluate_model(table_name: str, target_col: str):
 
         # This generates the table you asked for
         print(classification_report(y_test, y_pred))
-        
+
         # Save metrics
         try:
             import json
             from pathlib import Path
+
             metrics_dir = Path(__file__).parent.parent.parent / "models" / "metrics"
             metrics_dir.mkdir(exist_ok=True)
             metrics = {
                 "accuracy": float(overall_acc),
                 "precision": float(precision),
                 "recall": float(recall),
-                "f1_score": float(f1)
+                "f1_score": float(f1),
             }
-            with open(metrics_dir / "genre_classification_metrics.json", 'w') as f:
+            with open(metrics_dir / "genre_classification_metrics.json", "w") as f:
                 json.dump(metrics, f, indent=2)
-            print(f"\n✅ Metrics saved to {metrics_dir / 'genre_classification_metrics.json'}")
+            print(
+                f"\n✅ Metrics saved to {metrics_dir / 'genre_classification_metrics.json'}"
+            )
         except Exception as e:
             print(f"\n⚠️  Could not save metrics: {e}")
 
@@ -341,6 +354,7 @@ def train_and_evaluate_model(table_name: str, target_col: str):
     except Exception as e:
         print(f"\n❌ An unexpected error occurred: {e}")
         import traceback
+
         traceback.print_exc()
 
 
