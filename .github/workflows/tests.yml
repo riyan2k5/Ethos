@@ -37,6 +37,23 @@ jobs:
       run: |
         pytest src/tests/test_ml_model.py -v --cov=src.ml --cov-report=xml --cov-report=term
     
+    - name: Set up database connection for DeepChecks tests
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      run: |
+        if [ -z "$DATABASE_URL" ]; then
+          echo "⚠️  DATABASE_URL not set. DeepChecks tests will be skipped."
+        else
+          echo "✅ DATABASE_URL is set (hidden for security)"
+        fi
+    
+    - name: Run DeepChecks ML tests
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      run: |
+        pytest src/tests/test_ml_deepchecks.py -v --tb=short || echo "⚠️  DeepChecks tests failed or skipped (check if database is available)"
+      continue-on-error: true
+    
     - name: Generate coverage report
       run: |
         pytest src/tests/ -v --cov=src --cov-report=xml --cov-report=html --cov-report=term-missing

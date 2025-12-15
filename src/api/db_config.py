@@ -57,22 +57,31 @@ class DatabaseConfig:
         self.sslmode = query_params.get("sslmode", ["prefer"])[0]
         self.channel_binding = query_params.get("channel_binding", [None])[0]
         
-        # Extract Neon endpoint ID from hostname if it's a Neon direct connection (not pooler)
+        # Extract Neon endpoint ID from hostname for all Neon connections
         if "neon.tech" in self.host:
-            if "-pooler" in self.host:
-                # Pooler endpoints don't need endpoint option - set to None
-                self.endpoint_id = None
-                self.is_pooler = True
+            self.is_pooler = "-pooler" in self.host or "pooler" in self.host.lower()
+            
+            # Extract endpoint ID from hostname
+            # Format: ep-xxx-xxx-xxxxx-pooler.region.aws.neon.tech or ep-xxx-xxx-xxxxx.region.aws.neon.tech
+            parts = self.host.split(".")
+            if parts and parts[0].startswith("ep-"):
+                # Extract endpoint ID (first part before first dot)
+                endpoint_id = parts[0]
+                # Remove "-pooler" suffix if present to get the base endpoint ID
+                if endpoint_id.endswith("-pooler"):
+                    self.endpoint_id = endpoint_id.replace("-pooler", "")
+                else:
+                    self.endpoint_id = endpoint_id
             else:
-                # Direct connection - extract endpoint ID
-                # Format: ep-xxx-xxx-xxxxx.region.aws.neon.tech
-                parts = self.host.split(".")
-                if parts and parts[0].startswith("ep-"):
-                    self.endpoint_id = parts[0]
-                    self.is_pooler = False
+                # Try to extract from query params if already present
+                if "options" in query_params:
+                    options = query_params["options"][0]
+                    if "endpoint=" in options:
+                        self.endpoint_id = options.split("endpoint=")[1].split("&")[0]
+                    else:
+                        self.endpoint_id = None
                 else:
                     self.endpoint_id = None
-                    self.is_pooler = False
         else:
             self.endpoint_id = None
             self.is_pooler = False
@@ -98,11 +107,15 @@ class DatabaseConfig:
             params.append(f"channel_binding={self.channel_binding}")
         
         # Add Neon endpoint ID only for direct connections (not pooler)
-        # Pooler endpoints handle SNI automatically and don't need endpoint option
+        # Pooler endpoints use SNI and don't need endpoint option
+        # Direct connections require endpoint ID if libpq doesn't support SNI
         if hasattr(self, 'endpoint_id') and self.endpoint_id and not getattr(self, 'is_pooler', False):
             from urllib.parse import quote
-            endpoint_param = f"options=endpoint%3D{quote(self.endpoint_id)}"
-            params.append(endpoint_param)
+            # Check if endpoint option already exists in params
+            endpoint_exists = any("endpoint" in p for p in params)
+            if not endpoint_exists:
+                endpoint_param = f"options=endpoint%3D{quote(self.endpoint_id)}"
+                params.append(endpoint_param)
         
         if params:
             conn_str += "?" + "&".join(params)

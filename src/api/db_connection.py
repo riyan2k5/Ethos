@@ -136,8 +136,13 @@ def test_connection() -> bool:
     try:
         config = DatabaseConfig()
         
-        # Use connection string directly if SSL parameters are present
-        if hasattr(config, 'sslmode') and config.sslmode:
+        # For Neon databases, always use connection string to ensure endpoint ID is included
+        if "neon.tech" in config.host:
+            import psycopg2
+            conn_string = config.get_connection_string()
+            logger.debug(f"Connecting to Neon database with connection string (endpoint ID: {getattr(config, 'endpoint_id', 'None')})")
+            conn = psycopg2.connect(conn_string)
+        elif hasattr(config, 'sslmode') and config.sslmode:
             import psycopg2
             conn = psycopg2.connect(config.get_connection_string())
         else:

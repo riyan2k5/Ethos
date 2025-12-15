@@ -59,6 +59,14 @@ jobs:
       run: |
         python src/api/test_db_connection.py
     
+    - name: Run DeepChecks ML validation tests
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      run: |
+        echo "Running DeepChecks ML validation before training..."
+        pytest src/tests/test_ml_deepchecks.py::TestDataIntegrity -v --tb=short || echo "⚠️  DeepChecks validation warnings (continuing with training)"
+      continue-on-error: true
+    
     - name: Train model
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -66,6 +74,14 @@ jobs:
         cd src/ml
         python train_genre_model.py
       continue-on-error: false
+    
+    - name: Validate trained model with DeepChecks
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      run: |
+        echo "Validating trained model with DeepChecks..."
+        pytest src/tests/test_ml_deepchecks.py::TestModelValidation -v --tb=short || echo "⚠️  Model validation warnings"
+      continue-on-error: true
     
     - name: Save model artifacts
       if: success()

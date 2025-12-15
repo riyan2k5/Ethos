@@ -17,6 +17,7 @@ This project includes a comprehensive CI/CD pipeline using GitHub Actions that a
 2. **Unit Tests and ML Tests** (`.github/workflows/tests.yml`)
    - Runs unit tests for preprocessing modules
    - Runs ML-specific tests for model training
+   - Runs DeepChecks ML validation tests (data integrity, drift detection, model validation)
    - Generates coverage reports
    - Tests on Python 3.10 and 3.11
    - Uploads coverage to Codecov
@@ -30,6 +31,8 @@ This project includes a comprehensive CI/CD pipeline using GitHub Actions that a
 4. **Model Training** (`.github/workflows/model-training.yml`)
    - Automated model training on schedule (weekly)
    - Manual trigger support
+   - Runs DeepChecks data integrity validation before training
+   - Runs DeepChecks model validation after training
    - Validates data before training
    - Saves model artifacts and metrics
    - Can be triggered on code changes to ML modules

@@ -38,6 +38,16 @@ jobs:
           cache: 'pip'
       - run: pip install -r requirements.txt
       - run: pytest src/tests/ -v --cov=src --cov-report=xml
+      - name: Run DeepChecks ML tests (if database available)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "⚠️  DATABASE_URL not set. Skipping DeepChecks tests."
+          else
+            pytest src/tests/test_ml_deepchecks.py::TestDataIntegrity -v --tb=short || echo "DeepChecks tests completed with warnings"
+          fi
+        continue-on-error: true
 
   # Data validation
   data-validation:

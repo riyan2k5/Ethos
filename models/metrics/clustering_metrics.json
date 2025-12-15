@@ -1,5 +1,5 @@
 {
-  "silhouette_score": 0.36348019214823024,
+  "silhouette_score": 0.3662661484639456,
   "cluster_distribution": {
     "0": 35275,
     "1": 106052
