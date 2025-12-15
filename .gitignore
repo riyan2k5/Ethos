@@ -36,3 +36,21 @@ models/*.pkl
 models/*.h5
 models/*.joblib
 !models/.gitkeep
+
+# Model files in src directory (should not be committed)
+src/models/*.pkl
+src/models/*.h5
+src/models/*.joblib
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+.pytest_cache/
+
+# Large data files (keep structure, ignore content)
+data/*.csv
+data/**/*.csv
+!data/.gitkeep
+!data/feature_importance_scores.csv
