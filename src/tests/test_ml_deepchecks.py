@@ -208,34 +208,6 @@ class TestModelValidation:
     """Tests for model validation using DeepChecks."""
     
     @pytest.mark.skipif(not DEEPCHECKS_AVAILABLE, reason="DeepChecks not available")
-    def test_model_performance_validation(self, prepare_datasets, load_trained_model):
-        """Test model performance validation."""
-        train_dataset = prepare_datasets["train_dataset"]
-        test_dataset = prepare_datasets["test_dataset"]
-        model = load_trained_model
-        
-        # Run model evaluation suite
-        suite = model_evaluation()
-        result = suite.run(train_dataset, test_dataset, model)
-        
-        # Check that model meets minimum performance criteria
-        # Extract accuracy from results
-        accuracy_check = None
-        for check_result in result.results:
-            if hasattr(check_result, 'value') and 'accuracy' in str(check_result).lower():
-                accuracy_check = check_result
-                break
-        
-        # Minimum accuracy threshold (adjust based on your requirements)
-        min_accuracy = 0.5  # 50% minimum accuracy
-        
-        print("\nModel Performance Validation Results:")
-        print(result)
-        
-        # Note: DeepChecks doesn't always expose metrics directly
-        # This is a basic check - you may need to extract metrics from the result object
-    
-    @pytest.mark.skipif(not DEEPCHECKS_AVAILABLE, reason="DeepChecks not available")
     def test_confusion_matrix_report(self, prepare_datasets, load_trained_model):
         """Test confusion matrix generation."""
         train_dataset = prepare_datasets["train_dataset"]
@@ -319,9 +291,10 @@ class TestMLPipelineIntegration:
         train_test_result = train_test_validation().run(train_dataset, test_dataset)
         print("2. Train-Test Validation:", "✅ PASSED" if train_test_result.passed else "⚠️ WARNINGS")
         
-        # Model evaluation
+        # Model evaluation (informational only - no accuracy threshold validation)
         model_eval_result = model_evaluation().run(train_dataset, test_dataset, model)
         print("3. Model Evaluation:", "✅ PASSED" if model_eval_result.passed else "⚠️ WARNINGS")
+        # Note: Model evaluation runs but doesn't enforce accuracy thresholds
         
         print("=" * 80)
         
