@@ -457,11 +457,6 @@ main {
     background: var(--dark-green);
 }
 
-.pixel-btn.liked {
-    background: #ef4444;
-    border-color: #ef4444;
-    color: white;
-}
 
 .similar-section {
     margin-top: 2rem;
@@ -552,6 +547,7 @@ main {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
+
 
 .settings-content {
     max-width: 1000px;
@@ -705,6 +701,89 @@ main {
     font-size: 1.5rem;
     font-weight: 700;
     font-family: var(--font-display);
+}
+
+/* Upload Area */
+.upload-area {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: var(--card-bg);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px var(--card-shadow);
+    border: 2px dashed var(--primary-green);
+    transition: all 0.3s;
+}
+
+.upload-area.drag-over {
+    border-color: var(--dark-green);
+    background: #f0fdf4;
+    transform: scale(1.02);
+}
+
+.upload-content {
+    text-align: center;
+    padding: 2rem;
+}
+
+.upload-icon {
+    font-size: 4rem;
+    color: var(--primary-green);
+    margin-bottom: 1rem;
+}
+
+.upload-content h3 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.upload-content p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.upload-status {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+}
+
+.upload-status.success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid var(--primary-green);
+}
+
+.upload-status.error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
+}
+
+.upload-status.info {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #3b82f6;
+}
+
+.dataset-info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--primary-green);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    margin-left: 1rem;
+    font-weight: 500;
+}
+
+.dataset-info-badge.custom {
+    background: #3b82f6;
 }
 
 /* Loading State */

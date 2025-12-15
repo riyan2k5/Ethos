@@ -10,14 +10,14 @@ install: ## Install dependencies
 	pip install -r requirements.txt
 
 test: ## Run all tests
-	pytest tests/ -v
+	pytest src/tests/ -v
 
 test-cov: ## Run tests with coverage
-	pytest tests/ -v --cov=. --cov-report=html --cov-report=term
+	pytest src/tests/ -v --cov=src --cov-report=html --cov-report=term
 
 lint: ## Run linters
-	flake8 . --max-line-length=127
-	pylint ml/ preprocessing/ scripts/ || true
+	flake8 src --max-line-length=127
+	pylint src/ml/ src/preprocessing/ src/scripts/ || true
 
 format: ## Format code with Black
 	black .
@@ -26,13 +26,13 @@ format-check: ## Check code formatting
 	black --check .
 
 validate: ## Validate data
-	python scripts/validate_data.py --data-path data/spotify_data_reduced.csv --target-column genre
+	python src/scripts/validate_data.py --data-path data/spotify_data_reduced.csv --target-column genre
 
 train: ## Train the genre classification model
-	cd ml && python train_genre_model.py
+	cd src/ml && python train_genre_model.py
 
 train-all: ## Train all ML models
-	python scripts/train_all_models.py
+	python src/scripts/train_all_models.py
 
 clean: ## Clean cache and temporary files
 	find . -type d -name __pycache__ -exec rm -r {} + 2>/dev/null || true

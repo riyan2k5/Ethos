@@ -27,18 +27,16 @@ ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
 # Default command for training
-CMD ["python", "ml/train_genre_model.py"]
+CMD ["python", "src/ml/train_genre_model.py"]
 
 # Stage 3: Production/serving image
 FROM base AS production
 
 # Copy only necessary files for serving
-COPY ml/ ./ml/
-COPY preprocessing/ ./preprocessing/
-COPY scripts/ ./scripts/
+COPY src/ ./src/
 
 # Expose port for API (if you add a serving API later)
 EXPOSE 8000
 
 # Default command (can be overridden)
-CMD ["python", "-m", "ml.train_genre_model"]
+CMD ["python", "-m", "src.ml.train_genre_model"]

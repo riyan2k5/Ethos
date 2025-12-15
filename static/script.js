@@ -12,9 +12,182 @@ function getUserId() {
     return userId;
 }
 
+
+// Upload Dataset Functions
+function toggleUploadArea() {
+    const uploadArea = document.getElementById('upload-area');
+    if (uploadArea) {
+        uploadArea.classList.toggle('hidden');
+        if (!uploadArea.classList.contains('hidden')) {
+            loadDatasetInfo();
+        }
+    }
+}
+
+function setupFileUpload() {
+    const fileInput = document.getElementById('file-input');
+    const uploadArea = document.getElementById('upload-area');
+    
+    if (!fileInput || !uploadArea) return;
+    
+    // Click to upload
+    fileInput.addEventListener('change', handleFileSelect);
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('drag-over');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type === 'text/csv' || files[0].name.endsWith('.csv')) {
+            handleFileUpload(files[0]);
+        } else {
+            showUploadStatus('Please upload a CSV file', 'error');
+        }
+    });
+}
+
+async function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        handleFileUpload(file);
+    }
+}
+
+async function handleFileUpload(file) {
+    const statusDiv = document.getElementById('upload-status');
+    if (!statusDiv) {
+        console.error('Upload status div not found');
+        return;
+    }
+    
+    statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading and processing dataset...';
+    statusDiv.className = 'upload-status info';
+    
+    try {
+        // Validate file type
+        if (!file.name.endsWith('.csv')) {
+            showUploadStatus('❌ Please upload a CSV file', 'error');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch('/api/upload-dataset', {
+            method: 'POST',
+            body: formData
+        });
+        
+        let result;
+        try {
+            result = await response.json();
+        } catch (e) {
+            // If response is not JSON, try to get text
+            const errorText = await response.text();
+            showUploadStatus(`❌ Server error: ${errorText || 'Unknown error'}`, 'error');
+            return;
+        }
+        
+        if (!response.ok) {
+            const errorMsg = result.detail || result.message || `HTTP error: ${response.status}`;
+            showUploadStatus(`❌ ${errorMsg}`, 'error');
+            return;
+        }
+        
+        if (result.success) {
+            const successMsg = result.message || 'Dataset uploaded successfully';
+            showUploadStatus(`✅ ${successMsg}`, 'success');
+            // Reload the page content with new dataset
+            setTimeout(() => {
+                loadHome();
+                loadDatasetInfo();
+                toggleUploadArea(); // Close upload area
+            }, 1500);
+        } else {
+            const errorMsg = result.message || result.detail || 'Unknown error occurred';
+            showUploadStatus(`❌ ${errorMsg}`, 'error');
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        const errorMsg = error.message || 'Failed to upload file';
+        showUploadStatus(`❌ Error: ${errorMsg}`, 'error');
+    }
+}
+
+function showUploadStatus(message, type) {
+    const statusDiv = document.getElementById('upload-status');
+    statusDiv.innerHTML = message;
+    statusDiv.className = `upload-status ${type}`;
+}
+
+async function loadDatasetInfo() {
+    try {
+        const response = await fetch('/api/dataset-info');
+        const info = await response.json();
+        
+        // Update UI to show current dataset info
+        const infoDisplay = document.getElementById('dataset-info-display');
+        if (infoDisplay) {
+            if (info.is_custom) {
+                infoDisplay.innerHTML = `
+                    <div class="dataset-info-badge custom">
+                        <i class="fas fa-database"></i> Custom Dataset: ${info.count.toLocaleString()} songs
+                    </div>
+                `;
+            } else {
+                infoDisplay.innerHTML = `
+                    <div class="dataset-info-badge">
+                        <i class="fas fa-database"></i> Default Dataset: ${info.count.toLocaleString()} songs
+                    </div>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading dataset info:', error);
+    }
+}
+
+async function resetToDefaultDataset() {
+    if (!confirm('Reset to default dataset? Your uploaded dataset will be removed.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/reset-dataset', {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showUploadStatus('✅ Reset to default dataset', 'success');
+            setTimeout(() => {
+                loadHome();
+                toggleUploadArea();
+            }, 1000);
+        }
+    } catch (error) {
+        console.error('Error resetting dataset:', error);
+        showUploadStatus(`❌ Error: ${error.message}`, 'error');
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing app...');
+    
+    // Setup file upload
+    setupFileUpload();
     
     // Wait a bit to ensure everything is ready
     setTimeout(() => {
@@ -341,9 +514,6 @@ async function openSongModal(song) {
                     <div class="control-deck">
                         <button id="play-btn" class="pixel-btn action" onclick="playOnSpotify()">
                             <i class="fab fa-spotify"></i> Play on Spotify
-                        </button>
-                        <button id="like-btn" class="pixel-btn" onclick="toggleLike()">
-                            <i class="fa-regular fa-heart"></i>
                         </button>
                     </div>
                 </div>
@@ -704,24 +874,6 @@ function playOnSpotify() {
             window.open(`https://open.spotify.com/track/${trackId}`, '_blank');
         }
     }
-}
-
-function toggleLike() {
-    if (!currentSong) return;
-    
-    const btn = document.getElementById('like-btn');
-    const isLiked = btn.classList.contains('liked');
-    
-    if (isLiked) {
-        btn.classList.remove('liked');
-        btn.innerHTML = '<i class="fa-regular fa-heart"></i>';
-    } else {
-        btn.classList.add('liked');
-        btn.innerHTML = '<i class="fa-solid fa-heart"></i>';
-    }
-    
-    const trackId = currentSong.track_id || currentSong.id;
-    trackInteraction(trackId, isLiked ? 'unlike' : 'like');
 }
 
 function trackInteraction(trackId, action) {

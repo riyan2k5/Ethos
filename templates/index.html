@@ -25,12 +25,37 @@
                 <div id="live-results" class="dropdown hidden"></div>
             </div>
             
+            <button id="upload-btn" class="settings-btn" onclick="toggleUploadArea()" title="Upload Dataset">
+                <i class="fas fa-upload"></i>
+            </button>
             <button id="settings-btn" class="settings-btn" onclick="openSettings()" title="Settings & Analytics">
                 <i class="fas fa-cog"></i>
             </button>
         </div>
     </header>
     
+    <!-- Dataset Upload Area -->
+    <div id="upload-area" class="upload-area hidden">
+        <div class="upload-content">
+            <span class="close-btn" onclick="toggleUploadArea()" style="position: absolute; top: 1rem; right: 1rem;"><i class="fa-solid fa-xmark"></i></span>
+            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+            <h3>Upload Your Dataset</h3>
+            <p>Drag and drop your CSV file here, or click to browse</p>
+            <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                Your dataset should include columns like: track_name, artist_name, track_id, danceability, energy, etc.
+            </p>
+            <input type="file" id="file-input" accept=".csv" style="display: none;">
+            <button class="pixel-btn action" onclick="document.getElementById('file-input').click()" style="margin-top: 1rem;">
+                <i class="fas fa-folder-open"></i> Choose File
+            </button>
+            <div id="upload-status" class="upload-status"></div>
+            <div id="dataset-info-display" style="margin-top: 1rem;"></div>
+            <button class="pixel-btn" onclick="resetToDefaultDataset()" style="margin-top: 1rem; background: #ef4444; border-color: #ef4444; color: white;">
+                <i class="fas fa-undo"></i> Reset to Default Dataset
+            </button>
+        </div>
+    </div>
+
     <main id="content-area">
         <div class="loading">
             <i class="fas fa-spinner"></i>
@@ -72,9 +97,6 @@
                     <div class="control-deck">
                         <button id="play-btn" class="pixel-btn action" onclick="playOnSpotify()">
                             <i class="fab fa-spotify"></i> Play on Spotify
-                        </button>
-                        <button id="like-btn" class="pixel-btn" onclick="toggleLike()">
-                            <i class="fa-regular fa-heart"></i>
                         </button>
                     </div>
                 </div>

@@ -32,7 +32,7 @@ A FastAPI web application for music discovery with ML-powered recommendations.
 
 3. **Train Models (if not already done)**
    ```bash
-   python scripts/train_all_models.py
+   python src/scripts/train_all_models.py
    ```
 
 4. **Run the Application**
@@ -42,7 +42,7 @@ A FastAPI web application for music discovery with ML-powered recommendations.
    
    Or using uvicorn directly:
    ```bash
-   uvicorn app.main:app --reload
+   uvicorn src.app.main:app --reload
    ```
 
 5. **Access the Web App**
@@ -52,11 +52,12 @@ A FastAPI web application for music discovery with ML-powered recommendations.
 
 ```
 Ethos/
-├── app/
-│   ├── main.py              # FastAPI application
-│   └── services/
-│       ├── data_loader.py   # Dataset loading
-│       ├── ml_service.py     # ML predictions
+├── src/
+│   ├── app/
+│   │   ├── main.py              # FastAPI application
+│   │   └── services/
+│   │       ├── data_loader.py   # Dataset loading
+│   │       ├── ml_service.py     # ML predictions
 │       ├── spotify_service.py # Spotify API integration
 │       └── recommendation_service.py # Recommendation logic
 ├── templates/

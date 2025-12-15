@@ -64,15 +64,15 @@ pytest
 pytest --cov=. --cov-report=html
 
 # Run specific test files
-pytest tests/test_preprocessing.py
-pytest tests/test_ml_model.py
+pytest src/tests/test_preprocessing.py
+pytest src/tests/test_ml_model.py
 ```
 
 ### Data Validation
 
 ```bash
 # Validate data
-python scripts/validate_data.py --data-path data/spotify_data_reduced.csv --target-column genre
+python src/scripts/validate_data.py --data-path data/spotify_data_reduced.csv --target-column genre
 ```
 
 ### Building Docker Images
@@ -118,10 +118,16 @@ Ethos/
 ├── .github/
 │   └── workflows/          # GitHub Actions workflows
 ├── data/                   # Data files (gitignored)
-├── ml/                     # ML model training code
-├── preprocessing/          # Data preprocessing scripts
-├── scripts/                # Utility scripts (validation, etc.)
-├── tests/                  # Test suite
+├── models/                 # Trained ML models
+├── src/                    # Source code
+│   ├── api/                # Database API
+│   ├── app/                # Web application
+│   ├── ml/                 # ML model training code
+│   ├── preprocessing/      # Data preprocessing scripts
+│   ├── scripts/            # Utility scripts (validation, etc.)
+│   └── tests/              # Test suite
+├── static/                 # Web static files (CSS, JS)
+├── templates/              # Web templates (HTML)
 ├── Dockerfile             # Container definition
 ├── requirements.txt       # Python dependencies
 └── README.md              # This file
@@ -132,8 +138,8 @@ Ethos/
 1. Clone the repository
 2. Install dependencies: `pip install -r requirements.txt`
 3. Run tests: `pytest`
-4. Validate data: `python scripts/validate_data.py`
-5. Train model: `python ml/train_genre_model.py`
+4. Validate data: `python src/scripts/validate_data.py`
+5. Train model: `python src/ml/train_genre_model.py`
 
 ## Contributing
 
