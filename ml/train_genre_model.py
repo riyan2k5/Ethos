@@ -293,6 +293,12 @@ def train_and_evaluate_model(table_name: str, target_col: str):
 
         # 8. Evaluation
         overall_acc = accuracy_score(y_test, y_pred)
+        
+        # Calculate additional metrics
+        from sklearn.metrics import precision_score, recall_score, f1_score
+        precision = precision_score(y_test, y_pred, average='weighted')
+        recall = recall_score(y_test, y_pred, average='weighted')
+        f1 = f1_score(y_test, y_pred, average='weighted')
 
         print("\n" + "=" * 60)
         print(f"✅ MODEL RESULTS")
@@ -303,6 +309,24 @@ def train_and_evaluate_model(table_name: str, target_col: str):
 
         # This generates the table you asked for
         print(classification_report(y_test, y_pred))
+        
+        # Save metrics
+        try:
+            import json
+            from pathlib import Path
+            metrics_dir = Path(__file__).parent.parent / "models" / "metrics"
+            metrics_dir.mkdir(exist_ok=True)
+            metrics = {
+                "accuracy": float(overall_acc),
+                "precision": float(precision),
+                "recall": float(recall),
+                "f1_score": float(f1)
+            }
+            with open(metrics_dir / "genre_classification_metrics.json", 'w') as f:
+                json.dump(metrics, f, indent=2)
+            print(f"\n✅ Metrics saved to {metrics_dir / 'genre_classification_metrics.json'}")
+        except Exception as e:
+            print(f"\n⚠️  Could not save metrics: {e}")
 
         print("=" * 60)
         print(f"\nModel saved to: {MODEL_FILE}")

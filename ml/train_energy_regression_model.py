@@ -246,6 +246,24 @@ def train_energy_regression_model(table_name: str, target_col: str):
         print(f"  Root Mean Squared Error (RMSE): {rmse:.4f}")
         print(f"  Mean Absolute Error (MAE): {mae:.4f}")
         
+        # Save metrics
+        try:
+            import json
+            from pathlib import Path
+            metrics_dir = Path(__file__).parent.parent / "models" / "metrics"
+            metrics_dir.mkdir(exist_ok=True)
+            metrics = {
+                "r2_score": float(r2),
+                "mse": float(mse),
+                "rmse": float(rmse),
+                "mae": float(mae)
+            }
+            with open(metrics_dir / "energy_regression_metrics.json", 'w') as f:
+                json.dump(metrics, f, indent=2)
+            print(f"\n✅ Metrics saved to {metrics_dir / 'energy_regression_metrics.json'}")
+        except Exception as e:
+            print(f"\n⚠️  Could not save metrics: {e}")
+        
         # Feature importance
         print(f"\nTop 10 Most Important Features:")
         feature_importance = pd.DataFrame({

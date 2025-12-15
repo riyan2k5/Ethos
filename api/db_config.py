@@ -57,13 +57,25 @@ class DatabaseConfig:
         self.sslmode = query_params.get("sslmode", ["prefer"])[0]
         self.channel_binding = query_params.get("channel_binding", [None])[0]
         
-        # Extract Neon endpoint ID from hostname if it's a Neon host
-        if "neon.tech" in self.host and "-pooler" in self.host:
-            # Extract endpoint ID (e.g., "ep-xxx-xxx-xxxxx" from "ep-xxx-xxx-xxxxx-pooler.region.aws.neon.tech")
-            endpoint_id = self.host.split("-pooler")[0]
-            self.endpoint_id = endpoint_id
+        # Extract Neon endpoint ID from hostname if it's a Neon direct connection (not pooler)
+        if "neon.tech" in self.host:
+            if "-pooler" in self.host:
+                # Pooler endpoints don't need endpoint option - set to None
+                self.endpoint_id = None
+                self.is_pooler = True
+            else:
+                # Direct connection - extract endpoint ID
+                # Format: ep-xxx-xxx-xxxxx.region.aws.neon.tech
+                parts = self.host.split(".")
+                if parts and parts[0].startswith("ep-"):
+                    self.endpoint_id = parts[0]
+                    self.is_pooler = False
+                else:
+                    self.endpoint_id = None
+                    self.is_pooler = False
         else:
             self.endpoint_id = None
+            self.is_pooler = False
         
     def get_connection_string(self, include_channel_binding: bool = False) -> str:
         """
@@ -85,8 +97,9 @@ class DatabaseConfig:
         if include_channel_binding and hasattr(self, 'channel_binding') and self.channel_binding:
             params.append(f"channel_binding={self.channel_binding}")
         
-        # Add Neon endpoint ID if present (required for SNI support)
-        if hasattr(self, 'endpoint_id') and self.endpoint_id:
+        # Add Neon endpoint ID only for direct connections (not pooler)
+        # Pooler endpoints handle SNI automatically and don't need endpoint option
+        if hasattr(self, 'endpoint_id') and self.endpoint_id and not getattr(self, 'is_pooler', False):
             from urllib.parse import quote
             endpoint_param = f"options=endpoint%3D{quote(self.endpoint_id)}"
             params.append(endpoint_param)

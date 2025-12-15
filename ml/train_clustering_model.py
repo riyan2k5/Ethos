@@ -264,6 +264,21 @@ def train_clustering_model(table_name: str, n_clusters: int = 2):
             for cluster_id, count in cluster_counts.items():
                 print(f"  Cluster {cluster_id}: {count} songs ({count/len(df)*100:.1f}%)")
             
+            # Save metrics
+            try:
+                import json
+                metrics_dir = Path(__file__).parent.parent / "models" / "metrics"
+                metrics_dir.mkdir(exist_ok=True)
+                metrics = {
+                    "silhouette_score": float(silhouette_avg),
+                    "cluster_distribution": {str(k): int(v) for k, v in cluster_counts.items()}
+                }
+                with open(metrics_dir / "clustering_metrics.json", 'w') as f:
+                    json.dump(metrics, f, indent=2)
+                print(f"\n✅ Metrics saved to {metrics_dir / 'clustering_metrics.json'}")
+            except Exception as e:
+                print(f"\n⚠️  Could not save metrics: {e}")
+            
             # Genre distribution per cluster
             print(f"\nGenre Distribution by Cluster:")
             for cluster_id in range(n_clusters):
