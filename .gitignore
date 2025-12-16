@@ -37,8 +37,8 @@ models/*.h5
 models/*.joblib
 !models/.gitkeep
 
-# Model files in src directory (should not be committed)
-src/models/*.pkl
+# Model files in src directory (tracked with Git LFS)
+# src/models/*.pkl - tracked with Git LFS
 src/models/*.h5
 src/models/*.joblib
 
