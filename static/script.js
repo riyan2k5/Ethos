@@ -526,19 +526,38 @@ async function openSongModal(song) {
         
         // AI Tags
         const tagsRow = document.getElementById('ai-tags-row');
-        if (tagsRow && data.predictions && data.predictions.genre) {
-            const genre = data.predictions.genre;
-            if (genre.top_predictions && genre.top_predictions.length > 0) {
-                genre.top_predictions.forEach(pred => {
+        if (tagsRow && data.predictions) {
+            // Genre predictions
+            if (data.predictions.genre) {
+                const genre = data.predictions.genre;
+                if (genre.top_predictions && genre.top_predictions.length > 0) {
+                    genre.top_predictions.forEach(pred => {
+                        const badge = document.createElement('span');
+                        badge.className = 'ai-badge';
+                        badge.innerHTML = `<i class="fas fa-tag"></i> ${pred.name} (${Math.round(pred.score * 100)}%)`;
+                        tagsRow.appendChild(badge);
+                    });
+                } else if (genre.predicted) {
                     const badge = document.createElement('span');
                     badge.className = 'ai-badge';
-                    badge.innerHTML = `<i class="fas fa-tag"></i> ${pred.name} (${Math.round(pred.score * 100)}%)`;
+                    badge.innerHTML = `<i class="fas fa-tag"></i> ${genre.predicted}`;
                     tagsRow.appendChild(badge);
-                });
-            } else if (genre.predicted) {
+                }
+            }
+            
+            // Energy prediction
+            if (data.predictions.energy !== undefined && data.predictions.energy !== null) {
                 const badge = document.createElement('span');
                 badge.className = 'ai-badge';
-                badge.innerHTML = `<i class="fas fa-tag"></i> ${genre.predicted}`;
+                badge.innerHTML = `<i class="fas fa-bolt"></i> AI predicted energy: ${(data.predictions.energy * 100).toFixed(1)}%`;
+                tagsRow.appendChild(badge);
+            }
+            
+            // Popularity prediction
+            if (data.predictions.popularity !== undefined && data.predictions.popularity !== null) {
+                const badge = document.createElement('span');
+                badge.className = 'ai-badge';
+                badge.innerHTML = `<i class="fas fa-chart-line"></i> AI predicted popularity: ${Math.round(data.predictions.popularity)}`;
                 tagsRow.appendChild(badge);
             }
         }

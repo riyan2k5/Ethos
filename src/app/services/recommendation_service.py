@@ -120,11 +120,11 @@ class RecommendationService:
 
         # Convert to named clusters
         result = {}
-        cluster_names = ["High Energy", "Chill Vibes"]
+        cluster_names = ["AI cluster: High Energy", "AI cluster: Chill Vibes"]
         for i in [0, 1]:
             if i in clusters and len(clusters[i]) > 0:
                 cluster_name = (
-                    cluster_names[i] if i < len(cluster_names) else f"Cluster {i}"
+                    cluster_names[i] if i < len(cluster_names) else f"AI cluster: {i}"
                 )
                 result[cluster_name] = clusters[i][:limit]
 

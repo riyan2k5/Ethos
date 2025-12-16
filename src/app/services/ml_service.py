@@ -20,6 +20,10 @@ class MLService:
         self.models_dir = Path(__file__).parent.parent.parent / "models"
         self.genre_model = None
         self.genre_features = None
+        self.energy_model = None
+        self.energy_features = None
+        self.popularity_model = None
+        self.popularity_features = None
         self.similar_songs_model = None
         self.similar_songs_scaler = None
         self.similar_songs_features = None
@@ -59,6 +63,28 @@ class MLService:
                 self.similar_songs_features = pickle.load(f)
 
             print("✅ Loaded similar songs model")
+
+        # Load energy regression model
+        energy_model_file = self.models_dir / "energy_regression_model.pkl"
+        energy_features_file = self.models_dir / "energy_regression_features.pkl"
+
+        if energy_model_file.exists() and energy_features_file.exists():
+            with open(energy_model_file, "rb") as f:
+                self.energy_model = pickle.load(f)
+            with open(energy_features_file, "rb") as f:
+                self.energy_features = pickle.load(f)
+            print("✅ Loaded energy regression model")
+
+        # Load popularity regression model
+        popularity_model_file = self.models_dir / "popularity_regression_model.pkl"
+        popularity_features_file = self.models_dir / "popularity_regression_features.pkl"
+
+        if popularity_model_file.exists() and popularity_features_file.exists():
+            with open(popularity_model_file, "rb") as f:
+                self.popularity_model = pickle.load(f)
+            with open(popularity_features_file, "rb") as f:
+                self.popularity_features = pickle.load(f)
+            print("✅ Loaded popularity regression model")
 
     def _create_engineered_features(self, features: Dict) -> Dict:
         """Create engineered features from base features."""
@@ -261,9 +287,91 @@ class MLService:
             traceback.print_exc()
             return []
 
+    def predict_energy(self, song: Dict) -> Optional[float]:
+        """Predict energy level for a song."""
+        if self.energy_model is None or self.energy_features is None:
+            return None
+
+        try:
+            # Extract features
+            features = {}
+            for feat in self.energy_features:
+                if feat in song:
+                    try:
+                        features[feat] = float(song[feat])
+                    except (ValueError, TypeError):
+                        features[feat] = 0.0
+                else:
+                    features[feat] = 0.0
+
+            # Create feature vector
+            feature_vector = [features.get(feat, 0.0) for feat in self.energy_features]
+            feature_array = np.array(feature_vector).reshape(1, -1)
+
+            # Predict
+            predicted_energy = self.energy_model.predict(feature_array)[0]
+            # Clamp to valid range
+            predicted_energy = max(0.0, min(1.0, predicted_energy))
+
+            return float(predicted_energy)
+        except Exception as e:
+            print(f"Error in predict_energy: {e}")
+            return None
+
+    def predict_popularity(self, song: Dict) -> Optional[float]:
+        """Predict popularity level for a song."""
+        if self.popularity_model is None or self.popularity_features is None:
+            return None
+
+        try:
+            # Create engineered features (same as in training)
+            engineered = self._create_engineered_features(song)
+
+            # Extract features
+            features = {}
+            for feat in self.popularity_features:
+                if feat in song:
+                    try:
+                        features[feat] = float(song[feat])
+                    except (ValueError, TypeError):
+                        if feat in engineered:
+                            features[feat] = float(engineered[feat])
+                        else:
+                            features[feat] = 0.0
+                elif feat in engineered:
+                    features[feat] = float(engineered[feat])
+                else:
+                    features[feat] = 0.0
+
+            # Create feature vector
+            feature_vector = [features.get(feat, 0.0) for feat in self.popularity_features]
+            feature_array = np.array(feature_vector).reshape(1, -1)
+
+            # Predict
+            predicted_popularity = self.popularity_model.predict(feature_array)[0]
+            # Clamp to valid range
+            predicted_popularity = max(0.0, min(100.0, predicted_popularity))
+
+            return float(predicted_popularity)
+        except Exception as e:
+            print(f"Error in predict_popularity: {e}")
+            return None
+
     def predict_all(self, song: Dict) -> Dict:
         """Get all predictions for a song."""
-        return {
+        result = {
             "genre": self.predict_genre(song),
             "similar_count": len(self.find_similar_songs(song, limit=1)),
         }
+
+        # Add energy prediction
+        energy = self.predict_energy(song)
+        if energy is not None:
+            result["energy"] = energy
+
+        # Add popularity prediction
+        popularity = self.predict_popularity(song)
+        if popularity is not None:
+            result["popularity"] = popularity
+
+        return result
