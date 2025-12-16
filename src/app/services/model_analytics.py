@@ -14,7 +14,7 @@ class ModelAnalytics:
     """Extract analytics from trained models."""
 
     def __init__(self):
-        self.models_dir = Path(__file__).parent.parent.parent.parent / "models"
+        self.models_dir = Path(__file__).parent.parent.parent / "models"
         self.metrics_loader = ModelMetricsLoader()
 
     def get_file_size(self, file_path: Path) -> str:

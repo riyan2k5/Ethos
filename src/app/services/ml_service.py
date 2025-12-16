@@ -17,7 +17,7 @@ class MLService:
     """Service for ML model predictions."""
 
     def __init__(self):
-        self.models_dir = Path(__file__).parent.parent.parent.parent / "models"
+        self.models_dir = Path(__file__).parent.parent.parent / "models"
         self.genre_model = None
         self.genre_features = None
         self.similar_songs_model = None

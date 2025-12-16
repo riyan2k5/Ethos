@@ -22,9 +22,9 @@ class ModelMetricsLoader:
     """Load or compute model evaluation metrics."""
 
     def __init__(self):
-        self.models_dir = Path(__file__).parent.parent.parent.parent / "models"
+        self.models_dir = Path(__file__).parent.parent.parent / "models"
         self.metrics_dir = self.models_dir / "metrics"
-        self.metrics_dir.mkdir(exist_ok=True)
+        self.metrics_dir.mkdir(parents=True, exist_ok=True)
 
     def load_metrics(self, model_name: str) -> Optional[Dict]:
         """Load saved metrics from JSON file."""
