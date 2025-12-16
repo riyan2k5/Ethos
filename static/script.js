@@ -526,9 +526,6 @@ async function openSongModal(song) {
         
         // AI Tags
         const tagsRow = document.getElementById('ai-tags-row');
-        console.log('AI Tags Row element:', tagsRow);
-        console.log('Predictions data:', data.predictions);
-        
         if (tagsRow && data.predictions) {
             // Genre predictions
             if (data.predictions.genre) {
@@ -549,9 +546,7 @@ async function openSongModal(song) {
             }
             
             // Energy prediction - check if key exists (including 0 values)
-            console.log('Energy check:', 'energy' in data.predictions, data.predictions.energy);
             if ('energy' in data.predictions && data.predictions.energy != null) {
-                console.log('Adding energy badge');
                 const badge = document.createElement('span');
                 badge.className = 'ai-badge';
                 badge.innerHTML = `<i class="fas fa-bolt"></i> AI predicted energy: ${(data.predictions.energy * 100).toFixed(1)}%`;
@@ -559,16 +554,12 @@ async function openSongModal(song) {
             }
             
             // Popularity prediction - check if key exists (including 0 values)
-            console.log('Popularity check:', 'popularity' in data.predictions, data.predictions.popularity);
             if ('popularity' in data.predictions && data.predictions.popularity != null) {
-                console.log('Adding popularity badge');
                 const badge = document.createElement('span');
                 badge.className = 'ai-badge';
                 badge.innerHTML = `<i class="fas fa-chart-line"></i> AI predicted popularity: ${Math.round(data.predictions.popularity)}`;
                 tagsRow.appendChild(badge);
             }
-        } else {
-            console.log('Missing tagsRow or predictions:', {tagsRow: !!tagsRow, predictions: !!data.predictions});
         }
         
         // Similar Songs
